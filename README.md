@@ -49,3 +49,6 @@ icons/
   icon48.png
   icon128.png
 ```
+
+## License
+- Apache License 2.0 (see `LICENSE`).
