@@ -23,7 +23,12 @@
   "host_permissions": [
     "https://www.linkedin.com/*"
   ],
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
   "action": {
+    "default_popup": "popup.html",
     "default_title": "LinkedIn Feed Remover",
     "default_icon": {
       "16": "icons/icon16.png",
