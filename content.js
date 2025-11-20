@@ -81,7 +81,7 @@
     return container;
   };
 
-  // Listen for toggle messages from popup/background
+  // Listen for toggle messages from popup (for immediate response)
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'toggle' && request.enabled !== undefined) {
       feedRemoverEnabled = request.enabled;
@@ -100,6 +100,24 @@
       sendResponse({ success: true, newState: feedRemoverEnabled });
     }
     return true; // Keep message channel open for async response
+  });
+
+  // Listen for storage changes (for cross-tab synchronization)
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'sync' && changes.feedRemoverEnabled) {
+      const newState = changes.feedRemoverEnabled.newValue;
+      log('Storage change detected:', newState ? 'ENABLED' : 'DISABLED');
+
+      feedRemoverEnabled = newState;
+
+      if (feedRemoverEnabled) {
+        injectCssHideRules();
+        removeFeed();
+        startObserver();
+      } else {
+        showFeed();
+      }
+    }
   });
 
   const isLikelyFeed = (el) => {

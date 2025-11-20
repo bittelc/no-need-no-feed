@@ -40,7 +40,7 @@ async function toggleFeed() {
     // Toggle state
     const newState = !result.feedRemoverEnabled;
 
-    // Save new state
+    // Save new state (this will trigger storage.onChanged in all tabs)
     await chrome.storage.sync.set({
       feedRemoverEnabled: newState,
       lastToggleTime: Date.now()
@@ -49,16 +49,20 @@ async function toggleFeed() {
     // Update UI
     updateUI(newState);
 
-    // Send message to current tab immediately (for instant feedback)
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab && tab.url && tab.url.includes('linkedin.com')) {
-      chrome.tabs.sendMessage(tab.id, {
-        type: 'toggle',
-        enabled: newState
-      }).catch(err => {
-        // Tab might not have content script loaded yet, that's okay
-        console.log('Could not send message to tab:', err.message);
-      });
+    // Send message to current tab immediately for instant feedback
+    // (storage.onChanged might have a slight delay)
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab && tab.url && tab.url.includes('linkedin.com')) {
+        await chrome.tabs.sendMessage(tab.id, {
+          type: 'toggle',
+          enabled: newState
+        });
+      }
+    } catch (err) {
+      // Tab might not have content script loaded yet, that's okay
+      // The storage.onChanged listener will handle it when the page loads
+      console.log('Could not send immediate message to tab:', err.message);
     }
   } catch (error) {
     console.error('Failed to toggle feed:', error);

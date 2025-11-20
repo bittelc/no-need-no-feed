@@ -36,9 +36,6 @@
       "128": "icons/icon128.png"
     }
   },
-  "background": {
-    "service_worker": "background.js"
-  },
   "browser_specific_settings": {
     "gecko": {
       "id": "linkedin-feed-remover@example.com",
