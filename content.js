@@ -6,16 +6,23 @@
   const DEBUG = false;
   const SHOW_PLACEHOLDER = false; // Set to true to show a friendly replacement card instead of removing the feed outright.
   const REMOVAL_DEBOUNCE_MS = 200;
+  const STYLE_ID = 'linkedin-feed-remover-style';
 
   const FEED_SELECTORS = [
     'div.feed-outlet',
     'main[role="main"] div.feed-outlet',
     'main[role="main"] div[data-test-id="feed-container"]',
     'main[role="main"] section[data-test-id="stream-container"]',
-    'main[role="main"] div[data-feed-root]'
+    'main[role="main"] div[data-feed-root]',
+    'main[role="main"] div[data-view-name="feed-full-update"]',
+    'main[role="main"] section.scaffold-layout__main div[data-view-name="feed-news-module"]',
+    'main[role="main"] section.scaffold-layout__main div[data-view-name="stream"]',
+    'main[role="main"] div[componentkey*="FeedType_MAIN_FEED"]',
+    'main[role="main"] div[data-live-test-urn*="feed"]'
   ];
 
-  const FEED_KEYWORD_PATTERNS = /(feed[-_ ]?outlet|news[-_ ]?feed|home[-_ ]?feed|voyager[-_ ]?feed|stream[-_ ]?container|feed-container)/;
+  const FEED_KEYWORD_PATTERNS =
+    /(feed[-_ ]?outlet|news[-_ ]?feed|home[-_ ]?feed|voyager[-_ ]?feed|stream[-_ ]?container|feed-container|feed-full|feedtype|main[-_ ]?feed|stream)/;
 
   let observer;
   let removalScheduled = false;
@@ -63,6 +70,8 @@
       el.getAttribute?.('data-test-id'),
       el.getAttribute?.('data-feed-root'),
       el.getAttribute?.('data-view-name'),
+      el.getAttribute?.('componentkey'),
+      el.getAttribute?.('data-live-test-urn'),
       el.getAttribute?.('aria-label')
     ]
       .filter(Boolean)
@@ -83,6 +92,28 @@
     return false;
   };
 
+  const injectCssHideRules = () => {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = `
+      /* Hard hide known feed containers to avoid flash of feed content */
+      main[role="main"] div.feed-outlet,
+      main[role="main"] div[data-test-id="feed-container"],
+      main[role="main"] section[data-test-id="stream-container"],
+      main[role="main"] div[data-feed-root],
+      main[role="main"] div[data-view-name="feed-full-update"],
+      main[role="main"] section.scaffold-layout__main div[data-view-name="feed-news-module"],
+      main[role="main"] section.scaffold-layout__main div[data-view-name="stream"],
+      main[role="main"] div[componentkey*="FeedType_MAIN_FEED"],
+      main[role="main"] div[data-live-test-urn*="feed"] {
+        display: none !important;
+        visibility: hidden !important;
+      }
+    `;
+    document.documentElement.appendChild(style);
+  };
+
   const findFeedElements = () => {
     const found = new Set();
 
@@ -101,18 +132,27 @@
     if (!el || el.dataset?.liFeedRemoved === 'true') return;
 
     if (SHOW_PLACEHOLDER) {
-      const replacement = buildPlaceholder();
-      el.replaceWith(replacement);
-      log('Replaced feed with placeholder', replacement);
-      return;
+      try {
+        const replacement = buildPlaceholder();
+        el.replaceWith(replacement);
+        log('Replaced feed with placeholder', replacement);
+        return;
+      } catch (error) {
+        log('placeholder error', error);
+      }
     }
 
-    el.remove();
-    log('Removed feed element', el);
+    try {
+      el.remove();
+      log('Removed feed element', el);
+    } catch (error) {
+      log('remove error', error);
+    }
   };
 
   const removeFeed = () => {
     try {
+      injectCssHideRules();
       const feeds = findFeedElements();
       if (!feeds.length) return;
       feeds.forEach(hideFeedElement);
@@ -138,6 +178,7 @@
 
   const start = () => {
     try {
+      injectCssHideRules();
       removeFeed();
       startObserver();
     } catch (error) {
