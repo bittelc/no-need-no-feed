@@ -70,6 +70,12 @@ Alternatively:
 4. The change applies immediately to all LinkedIn tabs
 5. Your preference persists across browser sessions
 
+**Demo:**
+
+[demo.mov](demo.mov)
+
+> Click the video link above to watch the toggle functionality in action.
+
 ### Default Behavior
 - By default, the feed is **hidden** when you first install
 - You can toggle it on anytime by clicking the extension icon
