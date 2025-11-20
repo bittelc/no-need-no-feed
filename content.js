@@ -20,6 +20,8 @@
     'div[data-view-name="stream"]',
     'div[componentkey*="FeedType_MAIN_FEED"]',
     'div[data-live-test-urn*="feed"]',
+    'div[data-view-name^="feed-"]',
+    'div[componentkey^="urn:li:activity"]',
     'article[data-urn^="urn:li:activity"]',
     'div[data-urn^="urn:li:activity"]',
     // Scoped variants under main for redundancy
@@ -31,7 +33,9 @@
     'main[role="main"] div[data-view-name="feed-news-module"]',
     'main[role="main"] div[data-view-name="stream"]',
     'main[role="main"] div[componentkey*="FeedType_MAIN_FEED"]',
-    'main[role="main"] div[data-live-test-urn*="feed"]'
+    'main[role="main"] div[data-live-test-urn*="feed"]',
+    'main[role="main"] div[data-view-name^="feed-"]',
+    'main[role="main"] div[componentkey^="urn:li:activity"]'
   ];
 
   const FEED_KEYWORD_PATTERNS =
@@ -85,6 +89,7 @@
       el.getAttribute?.('data-view-name'),
       el.getAttribute?.('componentkey'),
       el.getAttribute?.('data-live-test-urn'),
+      el.getAttribute?.('data-view-name'),
       el.getAttribute?.('aria-label')
     ]
       .filter(Boolean)
@@ -120,6 +125,8 @@
       div[data-view-name="stream"],
       div[componentkey*="FeedType_MAIN_FEED"],
       div[data-live-test-urn*="feed"],
+      div[data-view-name^="feed-"],
+      div[componentkey^="urn:li:activity"],
       article[data-urn^="urn:li:activity"],
       div[data-urn^="urn:li:activity"],
       main[role="main"] div.feed-outlet,
@@ -131,6 +138,8 @@
       main[role="main"] div[data-view-name="stream"],
       main[role="main"] div[componentkey*="FeedType_MAIN_FEED"],
       main[role="main"] div[data-live-test-urn*="feed"],
+      main[role="main"] div[data-view-name^="feed-"],
+      main[role="main"] div[componentkey^="urn:li:activity"],
       main[role="main"] article[data-urn^="urn:li:activity"],
       main[role="main"] div[data-urn^="urn:li:activity"] {
         display: none !important;
