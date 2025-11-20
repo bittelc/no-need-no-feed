@@ -23,13 +23,21 @@
   "host_permissions": [
     "https://www.linkedin.com/*"
   ],
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
   "action": {
+    "default_popup": "popup.html",
     "default_title": "LinkedIn Feed Remover",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
+  },
+  "background": {
+    "service_worker": "background.js"
   },
   "browser_specific_settings": {
     "gecko": {

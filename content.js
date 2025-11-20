@@ -8,6 +8,9 @@
   const REMOVAL_DEBOUNCE_MS = 200;
   const STYLE_ID = 'linkedin-feed-remover-style';
 
+  // Toggle state - will be loaded from storage
+  let feedRemoverEnabled = true;
+
   const FEED_SELECTORS = [
     // Canonical feed containers
     'div.feed-outlet',
@@ -77,6 +80,27 @@
     container.appendChild(subtitle);
     return container;
   };
+
+  // Listen for toggle messages from popup/background
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === 'toggle' && request.enabled !== undefined) {
+      feedRemoverEnabled = request.enabled;
+      log('Toggle received:', feedRemoverEnabled ? 'ENABLED' : 'DISABLED');
+
+      if (feedRemoverEnabled) {
+        // Enable: inject CSS and start hiding
+        injectCssHideRules();
+        removeFeed();
+        startObserver();
+      } else {
+        // Disable: show feed
+        showFeed();
+      }
+
+      sendResponse({ success: true, newState: feedRemoverEnabled });
+    }
+    return true; // Keep message channel open for async response
+  });
 
   const isLikelyFeed = (el) => {
     if (!el || el.dataset?.liFeedRemoved === 'true') return false;
@@ -199,12 +223,39 @@
     }
   };
 
+  const showFeed = () => {
+    try {
+      // Remove CSS hiding rules
+      const style = document.getElementById(STYLE_ID);
+      if (style) {
+        style.remove();
+        log('Removed CSS hiding rules');
+      }
+
+      // Disconnect observer to stop preventing feed from appearing
+      if (observer) {
+        observer.disconnect();
+        observer = null;
+        log('Disconnected MutationObserver');
+      }
+
+      // Note: Elements that were already removed from DOM cannot be restored.
+      // But LinkedIn's SPA will re-render the feed naturally when user navigates
+      // or the page refreshes. The absence of CSS rules and observer means
+      // the feed will appear normally going forward.
+    } catch (error) {
+      log('showFeed error', error);
+    }
+  };
+
   const scheduleRemoval = () => {
-    if (removalScheduled) return;
+    if (!feedRemoverEnabled || removalScheduled) return;
     removalScheduled = true;
     setTimeout(() => {
       removalScheduled = false;
-      removeFeed();
+      if (feedRemoverEnabled) {
+        removeFeed();
+      }
     }, REMOVAL_DEBOUNCE_MS);
   };
 
@@ -214,11 +265,25 @@
     observer.observe(document.body, { childList: true, subtree: true });
   };
 
-  const start = () => {
+  const start = async () => {
     try {
-      injectCssHideRules();
-      removeFeed();
-      startObserver();
+      // Load toggle state from storage
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        const result = await chrome.storage.sync.get({
+          feedRemoverEnabled: true // default to enabled
+        });
+        feedRemoverEnabled = result.feedRemoverEnabled;
+        log('Initial state loaded:', feedRemoverEnabled ? 'ENABLED' : 'DISABLED');
+      }
+
+      // Only hide feed if enabled
+      if (feedRemoverEnabled) {
+        injectCssHideRules();
+        removeFeed();
+        startObserver();
+      } else {
+        log('Feed remover is disabled, not hiding feed');
+      }
     } catch (error) {
       log('init error', error);
     }
